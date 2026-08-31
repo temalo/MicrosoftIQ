@@ -1,0 +1,31 @@
+# Generated data (rebuild with `python generate.py`)
+data/output/
+# ...but keep the small manifest of expected headline answers
+!data/output/
+data/output/*
+!data/output/manifest.json
+
+# Environment / secrets
+.env
+*.env
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build/render artifacts
+*.pdf
+slides/*.png

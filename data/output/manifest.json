@@ -1,0 +1,77 @@
+{
+  "top_speakers_by_licensed_users_attended": [
+    [
+      "Sara Nguyen",
+      4081
+    ],
+    [
+      "Tariq Popov",
+      3560
+    ],
+    [
+      "Hugo Yilmaz",
+      2506
+    ],
+    [
+      "Rosa Weber",
+      2386
+    ],
+    [
+      "Ines Popov",
+      2331
+    ]
+  ],
+  "top_sponsors_by_influenced_pipeline": [
+    [
+      "Datallar",
+      5214656.3,
+      2.61
+    ],
+    [
+      "Fluxgate",
+      1841241.88,
+      2.45
+    ],
+    [
+      "Warehowl",
+      1156226.45,
+      2.26
+    ],
+    [
+      "Bindery",
+      1015497.83,
+      2.16
+    ],
+    [
+      "Brightpath",
+      981515.43,
+      2.27
+    ]
+  ],
+  "licensed_user_definitions": {
+    "NamedLicensedUser": 658,
+    "PaidLicensedSeat": 749,
+    "ServedPopulation": 2294,
+    "LoginCapableIdentity": 3484
+  },
+  "distinct_active_licensed_users": 4317,
+  "row_counts": {
+    "businessunit": 8,
+    "role": 8,
+    "product": 6,
+    "entitlement": 18,
+    "org": 220,
+    "user": 5000,
+    "userlicence": 6211,
+    "conference": 8,
+    "speaker": 60,
+    "session": 128,
+    "sessionspeaker": 169,
+    "registration": 24353,
+    "sessionattendance": 66851,
+    "sponsor": 30,
+    "conferencesponsor": 96,
+    "sessionfeedback": 8959,
+    "conferencefinance": 8
+  }
+}

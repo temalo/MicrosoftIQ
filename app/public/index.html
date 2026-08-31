@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{{BRAND}} — Microsoft IQ Agent</title>
+<style>
+  :root{
+    --g-navy:#1b2a4a;
+    --g-navy-2:#152238;
+    --g-blue:#2f6bd6;
+    --g-blue-d:#2456b3;
+    --g-ink:#1a1a1a;
+    --g-grey:#5b6770;
+    --g-line:#e2e6ea;
+    --g-bg:#f4f6f8;
+    --g-card:#ffffff;
+    --g-user:#e9f0fb;
+    --radius:10px;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 8px 24px rgba(20,40,90,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Segoe UI",-apple-system,Helvetica,Arial,sans-serif;
+    color:var(--g-ink);background:var(--g-bg);
+    display:flex;flex-direction:column;min-height:100vh;
+  }
+  header{
+    background:var(--g-navy);color:#fff;
+    padding:0 24px;height:64px;display:flex;align-items:center;gap:16px;
+    box-shadow:0 2px 0 var(--g-blue);
+  }
+  .wordmark{font-weight:800;font-size:24px;letter-spacing:-.4px;color:#fff}
+  .divider{width:1px;height:28px;background:rgba(255,255,255,.28)}
+  .unit{font-size:14px;font-weight:600;color:#cfe0f2;letter-spacing:.3px}
+  header .spacer{flex:1}
+  .who{font-size:12.5px;color:#cfe0f2;display:flex;align-items:center;gap:10px}
+  .who button{
+    background:transparent;color:#cfe0f2;border:1px solid rgba(255,255,255,.35);
+    border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;
+  }
+  .who button:hover{background:rgba(255,255,255,.1)}
+  main{flex:1;display:flex;justify-content:center;padding:24px 16px 8px}
+  .shell{width:100%;max-width:860px;display:flex;flex-direction:column;gap:16px}
+  .hero{
+    background:linear-gradient(135deg,var(--g-navy),var(--g-blue-d));
+    color:#fff;border-radius:var(--radius);padding:22px 26px;box-shadow:var(--shadow);
+  }
+  .hero h1{margin:0 0 4px;font-size:20px;font-weight:700}
+  .hero p{margin:0;font-size:13.5px;color:#dbe7f4;line-height:1.5}
+  .card{background:var(--g-card);border:1px solid var(--g-line);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+  .chat{padding:20px;display:flex;flex-direction:column;gap:14px;min-height:280px;max-height:52vh;overflow-y:auto}
+  .msg{display:flex;gap:10px;align-items:flex-start;animation:fade .2s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .avatar{width:30px;height:30px;border-radius:50%;flex:0 0 30px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  .msg.user .avatar{background:var(--g-grey)}
+  .msg.bot .avatar{background:var(--g-blue)}
+  .bubble{padding:11px 14px;border-radius:10px;font-size:14px;line-height:1.55;max-width:100%;overflow-wrap:anywhere}
+  .msg.user .bubble{background:var(--g-user)}
+  .msg.bot .bubble{background:#f7f9fb;border:1px solid var(--g-line)}
+  .bubble h1,.bubble h2,.bubble h3{font-size:15px;margin:.4em 0 .2em}
+  .bubble ul,.bubble ol{margin:.3em 0 .3em 1.2em;padding:0}
+  .bubble li{margin:.15em 0}
+  .bubble code{background:#eef1f4;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .bubble table{border-collapse:collapse;margin:.4em 0;font-size:13px}
+  .bubble th,.bubble td{border:1px solid var(--g-line);padding:5px 9px;text-align:left}
+  .bubble th{background:#eef3f8}
+  .err{color:#9a1b1b;background:#fdecec;border:1px solid #f5c6c6;border-radius:8px;padding:10px 12px;font-size:13px}
+  .typing span{display:inline-block;width:6px;height:6px;margin:0 1px;background:var(--g-blue);border-radius:50%;animation:blink 1.2s infinite both}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 4px}
+  .chip{background:#fff;border:1px solid var(--g-line);color:var(--g-navy);border-radius:20px;padding:7px 13px;font-size:12.5px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--g-blue);background:#f2f8fd}
+  .composer{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--g-line);background:#fafbfc}
+  .composer input{flex:1;border:1px solid var(--g-line);border-radius:8px;padding:11px 13px;font-size:14px;outline:none}
+  .composer input:focus{border-color:var(--g-blue);box-shadow:0 0 0 3px rgba(47,107,214,.12)}
+  .composer button{background:var(--g-blue);color:#fff;border:0;border-radius:8px;padding:0 20px;font-size:14px;font-weight:600;cursor:pointer}
+  .composer button:hover{background:var(--g-blue-d)}
+  .composer button:disabled{opacity:.5;cursor:default}
+  .signin{padding:26px;text-align:center}
+  .signin h2{margin:0 0 6px;color:var(--g-navy);font-size:18px}
+  .signin p{color:var(--g-grey);font-size:13.5px;margin:0 0 16px}
+  .signin .big{background:var(--g-blue);color:#fff;border:0;border-radius:8px;padding:11px 22px;font-size:14.5px;font-weight:600;cursor:pointer}
+  .signin .big:hover{background:var(--g-blue-d)}
+  .code{margin:18px auto 0;max-width:420px;background:#f2f8fd;border:1px solid #cfe4f6;border-radius:10px;padding:16px}
+  .code .lbl{font-size:12px;color:var(--g-grey);text-transform:uppercase;letter-spacing:.6px}
+  .code .val{font-size:28px;font-weight:800;letter-spacing:4px;color:var(--g-navy);margin:4px 0 8px}
+  .code a{color:var(--g-blue);font-weight:600}
+  .hidden{display:none}
+  footer{padding:14px 24px 22px;text-align:center;color:var(--g-grey);font-size:11.5px;line-height:1.5}
+  footer strong{color:var(--g-navy)}
+</style>
+</head>
+<body>
+  <header>
+    <span class="wordmark">{{BRAND}}</span>
+    <span class="divider"></span>
+    <span class="unit">Conferences &middot; Microsoft IQ</span>
+    <span class="spacer"></span>
+    <span class="who" id="who"></span>
+  </header>
+
+  <main>
+    <div class="shell">
+      <div class="hero">
+        <h1>Microsoft IQ &mdash; Conferences</h1>
+        <p>One agent, two grounded brains. Ask about the numbers &mdash; speaker impact, sponsor value,
+           attendance, pipeline &mdash; answered by the <strong>Fabric Data Agent</strong>; or the story &mdash;
+           speaker bios, session guides, sponsor packages, policies &mdash; answered from <strong>Foundry IQ</strong>
+           knowledge. Blended questions use both, and every answer names its source.</p>
+      </div>
+
+      <div class="card" id="signinCard">
+        <div class="signin">
+          <h2>Sign in to continue</h2>
+          <p>Authenticate with a Microsoft account that has access to the Foundry agent.</p>
+          <button class="big" id="signinBtn">Sign in with Microsoft</button>
+          <div class="code hidden" id="codeBox">
+            <div class="lbl">Go to <a id="verUri" href="#" target="_blank" rel="noopener">microsoft.com/devicelogin</a> and enter code</div>
+            <div class="val" id="userCode">--------</div>
+            <div class="lbl" id="loginStatus">Waiting for you to complete sign-in&hellip;</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hidden" id="chatCard">
+        <div class="chat" id="chat">
+          <div class="msg bot">
+            <div class="avatar">AI</div>
+            <div class="bubble">Hello. I&rsquo;m the Microsoft IQ orchestrator for {{BRAND}} Conferences. Ask me a hard number &mdash; try <em>&ldquo;Which speakers had the most licensed users attend?&rdquo;</em> &mdash; or a knowledge question like <em>&ldquo;What sponsorship packages are available?&rdquo;</em>. I&rsquo;ll tell you which source I used.</div>
+          </div>
+        </div>
+        <div class="chips" id="chips">
+          <div class="chip">Which speakers had the most licensed users attend?</div>
+          <div class="chip">What sponsors drove the most value?</div>
+          <div class="chip">What sponsorship packages are available?</div>
+          <div class="chip">Which speaker drew the most licensed users, and what&rsquo;s their background?</div>
+        </div>
+        <div class="composer">
+          <input id="q" type="text" placeholder="Ask the Microsoft IQ agent&hellip;" autocomplete="off" />
+          <button id="send">Ask</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Demonstration client for an Azure AI Foundry agent over Microsoft Fabric. &ldquo;{{BRAND}}&rdquo; is a
+    <strong>fictitious company</strong> used only to label synthetic demo data; any resemblance to real
+    organizations is coincidental.
+  </footer>
+
+<script>
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function mdInline(s){
+  return esc(s)
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>');
+}
+function renderMarkdown(md){
+  const lines = md.replace(/\r/g,'').split('\n');
+  let html='', i=0;
+  while(i<lines.length){
+    let line=lines[i];
+    if(/^\s*\|.*\|\s*$/.test(line) && i+1<lines.length && /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i+1])){
+      const head=line.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      i+=2; let rows=[];
+      while(i<lines.length && /^\s*\|.*\|\s*$/.test(lines[i])){
+        rows.push(lines[i].trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim())); i++;
+      }
+      html+='<table><thead><tr>'+head.map(h=>'<th>'+mdInline(h)+'</th>').join('')+'</tr></thead><tbody>'+
+        rows.map(r=>'<tr>'+r.map(c=>'<td>'+mdInline(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+      continue;
+    }
+    let h=line.match(/^(#{1,4})\s+(.*)$/);
+    if(h){ html+='<h'+h[1].length+'>'+mdInline(h[2])+'</h'+h[1].length+'>'; i++; continue; }
+    if(/^\s*[-*]\s+/.test(line)){
+      html+='<ul>';
+      while(i<lines.length && /^\s*[-*]\s+/.test(lines[i])){ html+='<li>'+mdInline(lines[i].replace(/^\s*[-*]\s+/,''))+'</li>'; i++; }
+      html+='</ul>'; continue;
+    }
+    if(/^\s*\d+\.\s+/.test(line)){
+      html+='<ol>';
+      while(i<lines.length && /^\s*\d+\.\s+/.test(lines[i])){ html+='<li>'+mdInline(lines[i].replace(/^\s*\d+\.\s+/,''))+'</li>'; i++; }
+      html+='</ol>'; continue;
+    }
+    if(line.trim()===''){ html+=''; i++; continue; }
+    html+='<p>'+mdInline(line)+'</p>'; i++;
+  }
+  return html;
+}
+
+const $=(s)=>document.querySelector(s);
+const chat=$('#chat');
+function bubble(role, html){
+  const w=document.createElement('div'); w.className='msg '+role;
+  w.innerHTML='<div class="avatar">'+(role==='user'?'You':'AI')+'</div><div class="bubble">'+html+'</div>';
+  chat.appendChild(w); chat.scrollTop=chat.scrollHeight; return w;
+}
+function typing(){ return bubble('bot','<span class="typing"><span></span><span></span><span></span></span>'); }
+
+async function api(pathPart, body){
+  const r=await fetch(pathPart,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  return r.json();
+}
+function showSignedIn(account){
+  $('#who').innerHTML='<span>'+account+'</span><button id="out">Sign out</button>';
+  $('#out').onclick=async()=>{ await api('/api/logout',{}); location.reload(); };
+  $('#signinCard').classList.add('hidden');
+  $('#chatCard').classList.remove('hidden');
+  $('#q').focus();
+}
+async function refreshStatus(){
+  const s=await api('/api/status');
+  if(s.signedIn){ showSignedIn(s.account); }
+}
+$('#signinBtn').onclick=async()=>{
+  $('#signinBtn').disabled=true;
+  const d=await api('/api/login/start',{});
+  if(!d.pollId){ $('#loginStatus').textContent='Could not start sign-in.'; return; }
+  $('#codeBox').classList.remove('hidden');
+  $('#userCode').textContent=d.user_code;
+  $('#verUri').href=d.verification_uri; $('#verUri').textContent=d.verification_uri.replace(/^https?:\/\//,'');
+  const iv=Math.max(2,(d.interval||5))*1000;
+  const timer=setInterval(async()=>{
+    const p=await api('/api/login/poll',{pollId:d.pollId});
+    if(p.status==='ok'){ clearInterval(timer); showSignedIn(p.account); }
+    else if(p.status==='error'){ clearInterval(timer); $('#loginStatus').textContent='Sign-in failed: '+(p.error||'unknown'); $('#signinBtn').disabled=false; }
+  }, iv);
+};
+
+let busy=false;
+async function ask(question){
+  if(busy||!question.trim()) return;
+  busy=true; $('#send').disabled=true;
+  bubble('user', esc(question));
+  $('#q').value='';
+  const t=typing();
+  try{
+    const r=await api('/api/ask',{question});
+    t.remove();
+    if(r.ok){ bubble('bot', renderMarkdown(r.answer)); }
+    else if(r.error==='not_signed_in'){ location.reload(); }
+    else {
+      bubble('bot','<div class="err"><strong>The agent could not complete this run.</strong><br>'+esc(r.error||('run '+r.runState))+'</div>');
+    }
+  }catch(e){ t.remove(); bubble('bot','<div class="err">'+esc(String(e))+'</div>'); }
+  busy=false; $('#send').disabled=false; $('#q').focus();
+}
+$('#send').onclick=()=>ask($('#q').value);
+$('#q').addEventListener('keydown',(e)=>{ if(e.key==='Enter') ask($('#q').value); });
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>ask(c.textContent));
+
+refreshStatus();
+</script>
+</body>
+</html>
