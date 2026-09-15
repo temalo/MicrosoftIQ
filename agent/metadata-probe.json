@@ -1,0 +1,15 @@
+{
+  "kind": "illustrative-source-config-fragment-not-a-deployment-payload",
+  "sources": [
+    {
+      "type": "ontology",
+      "artifactId": "<YOUR-ONTOLOGY-ITEM-ID>",
+      "elements": [
+        {
+          "name": "BadgeScan",
+          "description": "CE-17 eligibility: a badge scan from an active licensed user who opted in to share contact and whose interaction is Demo Request or Meeting Booked. IsQualified alone excludes the licensing requirement."
+        }
+      ]
+    }
+  ]
+}

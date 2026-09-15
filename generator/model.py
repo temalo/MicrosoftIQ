@@ -410,6 +410,8 @@ def build_model():
         })
     tables["conferencefinance"] = conferencefinance
 
+    from rti.simulator import derive_dimensions
+    tables["boothdim"], tables["scandevice"] = derive_dimensions(tables)
     return tables
 
 

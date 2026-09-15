@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "tables": {
+    "BoothDim": {
+      "key": ["BoothId"],
+      "columns": {"BoothId":"long","ConferenceSponsorId":"long","ConferenceId":"long","SponsorId":"long","SponsorName":"string","Tier":"string","BoothCode":"string"}
+    },
+    "ScanDevice": {
+      "key": ["DeviceId"],
+      "columns": {"DeviceId":"string","BoothId":"long","ConferenceId":"long","DeviceType":"string"}
+    },
+    "RunInfo": {
+      "key": ["RunId"],
+      "columns": {"RunId":"string","Seed":"long","ModelHash":"string","StartedAt":"datetime","PlannedEndAt":"datetime","ConfigJson":"string"}
+    },
+    "BadgeScan": {
+      "key": ["ScanId"],
+      "columns": {"ScanId":"string","RunId":"string","Seed":"long","ScanTimestamp":"datetime","ConferenceId":"long","BoothId":"long","SponsorId":"long","UserId":"long","DeviceId":"string","ScanType":"string","DwellSeconds":"long","IsLicensedUser":"bool","OptInShareContact":"bool","IsQualified":"bool","IsSynthetic":"bool"}
+    }
+  },
+  "foreignKeys": [
+    {"from":"BoothDim","columns":["ConferenceSponsorId"],"to":"conferencesponsor","references":["ConferenceSponsorId"]},
+    {"from":"BoothDim","columns":["ConferenceId"],"to":"conference","references":["ConferenceId"]},
+    {"from":"BoothDim","columns":["SponsorId"],"to":"sponsor","references":["SponsorId"]},
+    {"from":"ScanDevice","columns":["BoothId","ConferenceId"],"to":"BoothDim","references":["BoothId","ConferenceId"]},
+    {"from":"BadgeScan","columns":["RunId"],"to":"RunInfo","references":["RunId"]},
+    {"from":"BadgeScan","columns":["BoothId","ConferenceId","SponsorId"],"to":"BoothDim","references":["BoothId","ConferenceId","SponsorId"]},
+    {"from":"BadgeScan","columns":["DeviceId","BoothId","ConferenceId"],"to":"ScanDevice","references":["DeviceId","BoothId","ConferenceId"]},
+    {"from":"BadgeScan","columns":["ConferenceId","UserId"],"to":"registration","references":["ConferenceId","UserId"]},
+    {"from":"BadgeScan","columns":["UserId"],"to":"user","references":["UserId"]}
+  ]
+}

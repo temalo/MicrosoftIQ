@@ -31,6 +31,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-only", action="store_true")
     ap.add_argument("--knowledge-only", action="store_true")
+    ap.add_argument("--overwrite", action="store_true",
+                    help="Explicitly replace changed generated CSVs/manifest after review")
     args = ap.parse_args()
 
     print("Building deterministic model (seed fixed)...")
@@ -38,9 +40,18 @@ def main():
     manifest = compute_manifest(tables)
 
     if not args.knowledge_only:
-        counts = write_tables(tables, DATA_OUT)
-        with open(os.path.join(DATA_OUT, "manifest.json"), "w", encoding="utf-8") as f:
-            json.dump(manifest, f, indent=2)
+        manifest_path = os.path.join(DATA_OUT, "manifest.json")
+        manifest_text = json.dumps(manifest, indent=2)
+        existing_manifest = None
+        if os.path.exists(manifest_path):
+            with open(manifest_path, encoding="utf-8") as f:
+                existing_manifest = json.load(f)
+            if existing_manifest != json.loads(manifest_text) and not args.overwrite:
+                raise FileExistsError("Manifest changed; review and use --overwrite")
+        counts = write_tables(tables, DATA_OUT, overwrite=args.overwrite)
+        if existing_manifest != json.loads(manifest_text):
+            with open(manifest_path, "w" if args.overwrite else "x", encoding="utf-8") as f:
+                f.write(manifest_text)
         print(f"\nData -> {DATA_OUT}")
         for k, v in counts.items():
             print(f"  {k:<20} {v:>8,} rows")

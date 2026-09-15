@@ -1,23 +1,30 @@
 """Write every table in the model to a CSV file under a target directory."""
 
 import csv
+import io
 import os
 
 
-def write_tables(tables, out_dir):
+def write_tables(tables, out_dir, overwrite=False):
     os.makedirs(out_dir, exist_ok=True)
-    written = {}
+    pending = {}
     for name, rows in tables.items():
         path = os.path.join(out_dir, f"{name}.csv")
-        if not rows:
-            open(path, "w").close()
-            written[name] = 0
-            continue
-        # union of keys preserves column order from the first row
-        fields = list(rows[0].keys())
-        with open(path, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=fields)
+        output = io.StringIO(newline="")
+        if rows:
+            w = csv.DictWriter(output, fieldnames=list(rows[0].keys()))
             w.writeheader()
             w.writerows(rows)
-        written[name] = len(rows)
-    return written
+        text = output.getvalue()
+        if os.path.exists(path):
+            with open(path, newline="", encoding="utf-8") as existing:
+                if existing.read() == text:
+                    continue
+            if not overwrite:
+                raise FileExistsError(f"Refusing to replace changed data: {path}; use --overwrite after review")
+        pending[path] = text
+    # Preflight every table before changing any of them.
+    for path, text in pending.items():
+        with open(path, "w" if overwrite else "x", newline="", encoding="utf-8") as handle:
+            handle.write(text)
+    return {name: len(rows) for name, rows in tables.items()}

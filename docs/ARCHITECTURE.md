@@ -8,11 +8,16 @@ suited to it, with an orchestrator deciding per question.
 flowchart TD
     GEN["generate.py<br/>(seeded model)"] -->|CSV tables| LH[("Fabric Lakehouse<br/>ConferencesData")]
     GEN -->|markdown| KBSRC["knowledge/files/*.md"]
+    GEN -->|derived booth/device keys| SIM["Synthetic badge simulator"]
+    SIM -->|Delta mode only| LH
+    SIM -->|independent direct streaming mode| KQL[("Eventhouse KQL database")]
+    KQL --> DASH["RTI dashboard<br/>manual Activator setup"]
+    KQL -->|explicit added/published source| FDA
 
     LH --> SM["Direct Lake<br/>Semantic Model<br/>(measures)"]
-    SM --> ONT["Fabric IQ<br/>Ontology<br/>(vocabulary)"]
+    LH -->|explicit entity and instance bindings| ONT["Fabric IQ<br/>Ontology<br/>(vocabulary)"]
     SM --> FDA["Fabric Data Agent<br/>(quantitative)"]
-    ONT -.definitions.-> FDA
+    ONT -.runtime dependent / known limitation.-> FDA
 
     KBSRC --> FIQ["Foundry IQ<br/>Knowledge Base<br/>(Azure AI Search)"]
 
@@ -35,6 +40,7 @@ flowchart TD
 | Quantitative / ranking | "Which speakers had the most licensed users attend?" | **Fabric Data Agent** over the semantic model |
 | Qualitative / descriptive | "What sponsorship packages are available?" | **Foundry IQ** knowledge base |
 | Blended | "Which speaker drew the most licensed users, and what's their background?" | **Both** — number first, then enrich |
+| Live operational | "Which booth went quiet for this run and UTC window?" | Explicitly added **KQL Data Agent source** |
 
 The orchestrator's instructions (see `agent/orchestrator-instructions.md`) encode
 these routing rules and require it to name the source it used.
@@ -62,8 +68,9 @@ See `data/schema.md` for the full table and relationship reference.
 
 ## Key implementation notes
 
-- **Data Agent routing.** Quantitative questions must resolve from the *semantic
-  model*, not the ontology (which has no measures). The Data Agent instructions
+- **Data Agent routing.** Historical/Delta quantitative questions resolve from the
+  *semantic model*; Eventhouse RTI resolves from an explicitly added *KQL source*,
+  not the ontology (which has no measures). The Data Agent instructions
   pin this with a top-priority rule; without it, ranking questions can fail with
   "there's content here I can't work with."
 - **Foundry IQ ingestion RBAC.** If API-key auth is disabled on the Foundry
@@ -75,3 +82,18 @@ See `data/schema.md` for the full table and relationship reference.
   the agent by name. The account-root Azure OpenAI path only accepts model
   deployments, not agents. The caller needs the **Cognitive Services OpenAI User**
   data-plane role (control-plane Owner is not sufficient).
+
+## RTI and grounding boundaries
+
+See `rti/README.md` for schema, finite seeded runs, secure ingestion, half-open UTC
+windows, zero-scan dimensions, same-conference/tier peer comparison, stream health
+and a one-booth outage. Delta and Eventhouse paths are independent and not
+automatically synchronized. Eventstream creation alone is not a wired route;
+there is no subsecond guarantee or automatically activated alert.
+
+Ontology relationship types are declarations, not FK-name automatic joins:
+`agent/ontology-bindings.json` describes explicit instance mappings still requiring
+setup. `agent/metadata-grounding.md` records an isolated ontology-only source probe:
+baseline unavailable and persisted `elements[].description` CE-17 rule still
+unavailable in the observed Standard runtime. It is **not** a successful grounding
+claim, and no reference answers are injected into instructions or knowledge.

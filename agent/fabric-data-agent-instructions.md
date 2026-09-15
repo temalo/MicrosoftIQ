@@ -10,12 +10,24 @@ work with".
 
 ## CRITICAL DATA SOURCE ROUTING (read first)
 
-For every quantitative or ranking question — counts, sums, averages, "how many",
+For historical or Delta quantitative/ranking questions — counts, sums, averages, "how many",
 "most/top/highest/lowest", licensed users attended, sponsor value, influenced
 pipeline, registrations, revenue, feedback — you MUST answer from the
 **ConferencesData semantic model** (the tables and measures). Do NOT attempt to
-answer these from the ontology; it has no measures. Use the ontology only for
-relationship/definition questions.
+answer these from the ontology; it has no measures. Use ontology metadata only
+when the connected runtime actually supports it; do not claim successful
+grounding if unavailable.
+
+For live badge scans, booth pulse/quietness, peer comparisons and Eventhouse RTI,
+use the **explicitly added KQL database source** (`BadgeScan`, `BoothDim`,
+`ScanDevice`, `RunInfo`, and the reviewed KQL functions). The existing semantic
+model path alone cannot read KQL. If that source is missing or unavailable, say so;
+do not substitute historical sponsor leads, knowledge prose or invented scans.
+Filter by a specific RunId, ConferenceId and half-open UTC time window, report
+stream freshness, and distinguish synthetic data from real attendance.
+`IsQualified` is opted-in demo/meeting; licensed-qualified additionally requires
+`IsLicensedUser`. Interaction mix is not a conversion funnel. Never share contact
+rows automatically or claim that an alert has been activated.
 
 ## Domain
 

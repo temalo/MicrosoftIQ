@@ -1,0 +1,73 @@
+// SIX INDEPENDENT TILE QUERIES: copy one numbered block per dashboard tile.
+// Replace _run and _conference in each block (or bind dashboard parameters).
+// _end=now() for live, datetime(2026-09-15T12:15:00Z) for the documented replay.
+// Every event window is [start,end), UTC. dcount is approximate.
+
+// 1. KPI strip: cards for scans, unique badges, qualified, licensed-qualified.
+let _run = "quiet-demo";
+let _conference = 1;
+let _end = now();
+let _window = 5m;
+ScanEvents(_run)
+| where ConferenceId == _conference
+| where ScanTimestamp >= _end - _window and ScanTimestamp < _end
+| summarize Scans=count(), UniqueBadges=dcount(UserId),
+            Qualified=countif(IsQualified),
+            LicensedQualified=countif(IsQualified and IsLicensedUser),
+            LastEvent=max(ScanTimestamp)
+| extend QualifiedShare=iff(Scans > 0, todouble(Qualified) / Scans, real(null)),
+         StreamFresh=isnotnull(LastEvent) and LastEvent >= _end - 1m
+
+// 2. Pulse: zero-filled 30-second bins for the last five minutes.
+let _run = "quiet-demo";
+let _conference = 1;
+let _end = now();
+let _start = _end - 5m;
+let Bins = range Offset from 0 to 9 step 1
+    | project Bucket = _start + Offset * 30s;
+let Counts = ScanEvents(_run)
+    | where ConferenceId == _conference and ScanTimestamp >= _start and ScanTimestamp < _end
+    | summarize Scans=count() by Bucket=bin_at(ScanTimestamp, 30s, _start);
+Bins
+| join kind=leftouter Counts on Bucket
+| project Bucket, Scans=coalesce(Scans, 0)
+| order by Bucket asc
+| render timechart
+
+// 3. Sponsor/booth leaderboard: retain both keys; zeros remain visible.
+let _run = "quiet-demo";
+let _conference = 1;
+let _end = now();
+BoothWindows(_run, _conference, _end, 5m)
+| extend QualifiedShare=iff(CurrentScans > 0, todouble(QualifiedScans) / CurrentScans, real(null))
+| order by CurrentScans desc, BoothId asc
+
+// 4. Interaction mix, NOT a true conversion funnel or user journey.
+let _run = "quiet-demo";
+let _conference = 1;
+let _end = now();
+let Counts = ScanEvents(_run)
+    | where ConferenceId == _conference and ScanTimestamp >= _end - 5m and ScanTimestamp < _end
+    | summarize Scans=count() by ScanType;
+datatable(ScanType:string)
+["Booth Visit", "Collateral Download", "Raffle Entry", "Demo Request", "Meeting Booked"]
+| join kind=leftouter Counts on ScanType
+| project ScanType, Scans=coalesce(Scans, 0)
+| render columnchart
+
+// 5. Peer comparison: same conference AND tier, excludes self, includes zeros.
+let _run = "quiet-demo";
+let _conference = 1;
+let _end = now();
+QuietBooths(_run, _conference, _end, 5m, 1m, 10, 2, 0.7, 0.7)
+| project BoothId, ConferenceId, SponsorName, Tier, CurrentScans,
+          PeerCount, PeerAverage, Retention, PeerRetention, Eligible
+| order by CurrentScans desc
+
+// 6. Booth going quiet: show health columns even when no candidates qualify.
+// These are configurable illustrative thresholds, NOT a staffing/response plan.
+let _run = "quiet-demo";
+let _conference = 1;
+let _end = now();
+QuietBooths(_run, _conference, _end, 5m, 1m, 10, 2, 0.7, 0.7)
+| order by QuietCandidate desc, BoothId asc

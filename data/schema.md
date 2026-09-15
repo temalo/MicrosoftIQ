@@ -47,7 +47,7 @@ The four **licensed-user definition flags** on `user` (nested populations):
 | `registration` | user × conference | `RegistrationId`, `ConferenceId`, `UserId`, `RegType`, `Status` |
 | `sessionattendance` | user × session | `SessionAttendanceId`, `SessionId`, `ConferenceId`, `UserId`, `DwellMinutes` |
 | `sponsor` | 30 sponsors | `SponsorId`, `Name`, `Industry` |
-| `conferencesponsor` | conference × sponsor | `Tier`, `SponsorshipFeeUSD`, `LeadsQualified`, `InfluencedPipelineUSD`, `ClosedWonUSD` |
+| `conferencesponsor` | conference × sponsor | `ConferenceSponsorId`, `ConferenceId`, `SponsorId`, `Tier`, `SponsorshipFeeUSD`, `LeadsQualified`, `InfluencedPipelineUSD`, `ClosedWonUSD` |
 | `sessionfeedback` | survey response | `SessionId`, `Rating`, `NPS` |
 | `conferencefinance` | one row per conference | revenue, cost, margin |
 
@@ -90,3 +90,18 @@ user         1─* sessionattendance
 
 The exact top results for the shipped seed are recorded in
 `data/output/manifest.json` after you run the generator.
+
+## RTI extension
+
+The generic generator also emits **`boothdim`** (one row per sponsorship) and
+**`scandevice`** (one synthetic reader per booth). The simulator emits **`runinfo`**
+and **`badgescan`**; no scan rows are added to historical sponsor lead totals.
+See [`rti/schema.json`](../rti/schema.json) for every column/type, primary key and
+composite FK, and [`rti/README.md`](../rti/README.md) for semantics.
+
+BoothId equals ConferenceSponsorId; ConferenceId and SponsorId are inherited from
+that sponsorship. SponsorName is derived from `sponsor.Name`, Tier from
+`conferencesponsor.Tier`; there are no `SponsorName`, `SponsorshipTier` or `IsActive`
+source columns. Device assignment is deterministic, not random.
+IsQualified is opted-in demo/meeting, while IsLicensedUser independently reflects
+an active `userlicence.Status` snapshot. CE-17/licensed-qualified requires both.

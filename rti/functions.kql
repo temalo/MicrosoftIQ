@@ -1,0 +1,61 @@
+// Deploy each function command separately after setup.kql and dimension loading.
+.create-or-alter function with (folder="Contoso Events", docstring="Deduplicate a single synthetic run by ScanId")
+ScanEvents(_run:string) {
+    BadgeScan
+    | where RunId == _run and IsSynthetic == true
+    | summarize arg_max(ScanTimestamp, *) by ScanId
+}
+
+.create-or-alter function with (folder="Contoso Events", docstring="All booths, including zeros, in two adjacent half-open UTC windows")
+BoothWindows(_run:string, _conference:long, _end:datetime, _window:timespan) {
+    let Counts = ScanEvents(_run)
+        | where ConferenceId == _conference
+        | where ScanTimestamp >= _end - 2 * _window and ScanTimestamp < _end
+        | summarize PreviousScans=countif(ScanTimestamp < _end - _window),
+                    CurrentScans=countif(ScanTimestamp >= _end - _window),
+                    QualifiedScans=countif(ScanTimestamp >= _end - _window and IsQualified),
+                    LicensedQualifiedScans=countif(ScanTimestamp >= _end - _window and IsQualified and IsLicensedUser)
+          by BoothId, ConferenceId;
+    BoothDim
+    | where ConferenceId == _conference
+    | summarize take_any(*) by BoothId, ConferenceId
+    | join kind=leftouter Counts on BoothId, ConferenceId
+    | project BoothId, ConferenceId, SponsorId, SponsorName, Tier, BoothCode,
+              PreviousScans=coalesce(PreviousScans, 0), CurrentScans=coalesce(CurrentScans, 0),
+              QualifiedScans=coalesce(QualifiedScans, 0),
+              LicensedQualifiedScans=coalesce(LicensedQualifiedScans, 0)
+}
+
+.create-or-alter function with (folder="Contoso Events", docstring="Illustrative quiet-booth candidates, not guaranteed incident detection")
+QuietBooths(_run:string, _conference:long, _end:datetime, _window:timespan,
+            _freshness:timespan, _minPrevious:long, _minPeers:long,
+            _dropFraction:real, _minPeerRetention:real) {
+    let Start = toscalar(RunInfo | where RunId == _run | summarize min(StartedAt));
+    let Finish = toscalar(RunInfo | where RunId == _run | summarize max(PlannedEndAt));
+    let LastEvent = toscalar(ScanEvents(_run)
+        | where ConferenceId == _conference and ScanTimestamp < _end
+        | summarize max(ScanTimestamp));
+    let StreamFresh = isnotnull(LastEvent) and LastEvent >= _end - _freshness;
+    let Warm = isnotnull(Start) and _end >= Start + 2 * _window;
+    let WithinRun = isnotnull(Finish) and _end <= Finish;
+    let Booths = materialize(BoothWindows(_run, _conference, _end, _window));
+    let Peers = Booths
+        | summarize TierBooths=count(), TierPrevious=sum(PreviousScans), TierCurrent=sum(CurrentScans)
+          by ConferenceId, Tier;
+    Booths
+    | join kind=leftouter Peers on ConferenceId, Tier
+    | extend PeerCount=TierBooths - 1, PeerPrevious=TierPrevious - PreviousScans,
+             PeerCurrent=TierCurrent - CurrentScans
+    | extend Retention=iff(PreviousScans > 0, todouble(CurrentScans) / PreviousScans, real(null)),
+             PeerRetention=iff(PeerPrevious > 0, todouble(PeerCurrent) / PeerPrevious, real(null)),
+             PeerAverage=iff(PeerCount > 0, todouble(PeerCurrent) / PeerCount, real(null))
+    | extend StreamFresh=StreamFresh, Warm=Warm, WithinRun=WithinRun, LastEvent=LastEvent
+    | extend Eligible=StreamFresh and Warm and WithinRun and PreviousScans >= _minPrevious
+                      and PeerCount >= _minPeers and PeerPrevious > 0
+    | extend QuietCandidate=Eligible and Retention <= 1.0 - _dropFraction
+                            and PeerRetention >= _minPeerRetention
+    | project BoothId, ConferenceId, SponsorId, SponsorName, Tier, BoothCode,
+              PreviousScans, CurrentScans, QualifiedScans, LicensedQualifiedScans,
+              PeerCount, PeerAverage, Retention, PeerRetention,
+              StreamFresh, Warm, WithinRun, LastEvent, Eligible, QuietCandidate
+}

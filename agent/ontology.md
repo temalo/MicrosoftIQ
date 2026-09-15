@@ -1,9 +1,11 @@
 # Ontology (Fabric IQ)
 
 The Fabric IQ ontology gives the model a business vocabulary — typed entities and
-named relationships — on top of the lakehouse tables. It answers *definitional*
-and *relationship* questions ("what is a licensed user", "how do speakers relate
-to attendees"); the semantic model answers the numbers.
+named relationships — on top of the lakehouse tables. This is the intended
+vocabulary layer, not a claim that all runtimes can answer from its descriptions.
+The semantic model answers historical/Delta numbers; explicitly selected KQL
+answers Eventhouse RTI. See [metadata-grounding.md](metadata-grounding.md) for
+the observed ontology-only Standard-runtime limitation.
 
 ## Entity types
 
@@ -55,4 +57,25 @@ Conference:
   lakehouse (OneLake).
 - Bind each entity type to its table and map the key + descriptive properties.
 - The ontology intentionally holds **no measures** — keep all aggregation in the
-  semantic model so the Data Agent routes numeric questions there.
+  selected semantic model or KQL source rather than inferring tool support.
+
+## RTI extension and explicit instance binding
+
+Add **Booth**, **ScanDevice**, **BadgeScan** entity types with the keys, properties
+and relationship endpoints in [ontology-bindings.json](ontology-bindings.json).
+This is a human-reviewed mapping specification, **not an auto-deployment payload**.
+It also identifies bridges for existing conference/sponsor, session/speaker,
+registration and attendance relationships.
+
+Native **relationship type declarations do not imply FK-name automatic joins**.
+Actual entity data binding and relationship **instance-binding setup is required**
+in the supported Fabric experience/API for your runtime. Map each source/target
+key explicitly, including all composite components listed, materialize the needed
+relationship source/bridge if required, and validate a sample traversal and orphan
+counts before claiming it works. Keys should be unique on entity tables.
+
+Map `sponsor.Name` to the Booth SponsorName property and
+`conferencesponsor.Tier` to Tier. Active licensing is `userlicence.Status = Active`.
+`BadgeScan.IsQualified` means opted-in demo/meeting; licensing is independent.
+Choose the Delta binding for the notebook's Delta path. An Eventhouse table is not
+automatically instance-bound through a same-named Delta table or this JSON spec.

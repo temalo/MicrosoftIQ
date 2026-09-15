@@ -1,3 +1,4 @@
 # The data + knowledge generator uses only the Python standard library.
-# The only dependency is python-pptx, needed just for the pitch deck (slides/).
+# This file only installs python-pptx for the pitch deck (slides/).
+# Optional direct RTI streaming: rti/requirements-eventhouse.txt.
 python-pptx>=0.6.21

@@ -1,0 +1,23 @@
+{
+  "kind": "human-reviewed-instance-binding-specification",
+  "note": "Not a Fabric deployment payload. Native relationship type declarations alone do not bind instances or join FK names.",
+  "entities": [
+    {"entity":"Booth","table":"boothdim","key":["BoothId"],"properties":["ConferenceId","ConferenceSponsorId","SponsorId","SponsorName","Tier","BoothCode"]},
+    {"entity":"ScanDevice","table":"scandevice","key":["DeviceId"],"properties":["BoothId","ConferenceId","DeviceType"]},
+    {"entity":"BadgeScan","table":"badgescan","key":["ScanId"],"properties":["RunId","Seed","ScanTimestamp","ConferenceId","BoothId","SponsorId","UserId","DeviceId","ScanType","DwellSeconds","IsLicensedUser","OptInShareContact","IsQualified","IsSynthetic"]}
+  ],
+  "relationships": [
+    {"name":"conference_has_booth","from":"Conference","to":"Booth","sourceTable":"boothdim","sourceColumns":["ConferenceId"],"targetTable":"conference","targetColumns":["ConferenceId"],"cardinality":"conference 1 to many booths"},
+    {"name":"sponsor_operates_booth","from":"Sponsor","to":"Booth","sourceTable":"boothdim","sourceColumns":["SponsorId"],"targetTable":"sponsor","targetColumns":["SponsorId"],"cardinality":"sponsor 1 to many booths"},
+    {"name":"booth_has_device","from":"Booth","to":"ScanDevice","sourceTable":"scandevice","sourceColumns":["BoothId","ConferenceId"],"targetTable":"boothdim","targetColumns":["BoothId","ConferenceId"],"cardinality":"booth 1 to 1 device in this demo"},
+    {"name":"booth_receives_scan","from":"Booth","to":"BadgeScan","sourceTable":"badgescan","sourceColumns":["BoothId","ConferenceId","SponsorId"],"targetTable":"boothdim","targetColumns":["BoothId","ConferenceId","SponsorId"],"cardinality":"booth 1 to many scans"},
+    {"name":"device_records_scan","from":"ScanDevice","to":"BadgeScan","sourceTable":"badgescan","sourceColumns":["DeviceId","BoothId","ConferenceId"],"targetTable":"scandevice","targetColumns":["DeviceId","BoothId","ConferenceId"],"cardinality":"device 1 to many scans"},
+    {"name":"user_makes_scan","from":"User","to":"BadgeScan","sourceTable":"badgescan","sourceColumns":["UserId"],"targetTable":"user","targetColumns":["UserId"],"cardinality":"user 1 to many scans"}
+  ],
+  "existingBridgeBindings": [
+    {"name":"session_presented_by_speaker","bridge":"sessionspeaker","fromEntity":"Session","fromKey":"SessionId","bridgeFrom":"SessionId","toEntity":"Speaker","toKey":"SpeakerId","bridgeTo":"SpeakerId"},
+    {"name":"conference_sponsored_by_sponsor","bridge":"conferencesponsor","fromEntity":"Conference","fromKey":"ConferenceId","bridgeFrom":"ConferenceId","toEntity":"Sponsor","toKey":"SponsorId","bridgeTo":"SponsorId"},
+    {"name":"user_registers_for_conference","bridge":"registration","fromEntity":"User","fromKey":"UserId","bridgeFrom":"UserId","toEntity":"Conference","toKey":"ConferenceId","bridgeTo":"ConferenceId"},
+    {"name":"user_attends_session","bridge":"sessionattendance","fromEntity":"User","fromKey":"UserId","bridgeFrom":"UserId","toEntity":"Session","toKey":"SessionId","bridgeTo":"SessionId"}
+  ]
+}

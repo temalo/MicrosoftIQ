@@ -15,6 +15,7 @@ spark = SparkSession.builder.getOrCreate()
 
 # Folder (inside the attached lakehouse's Files) that holds the uploaded CSVs.
 SEED_DIR = "Files/seed"
+WRITE_MODE = "errorifexists"  # Explicitly choose overwrite only in a disposable lakehouse.
 
 TABLES = [
     "businessunit", "role", "product", "entitlement", "org",
@@ -22,7 +23,13 @@ TABLES = [
     "conference", "speaker", "session", "sessionspeaker",
     "registration", "sessionattendance",
     "sponsor", "conferencesponsor", "sessionfeedback", "conferencefinance",
+    "boothdim", "scandevice",
 ]
+
+if WRITE_MODE == "errorifexists":
+    existing = [name for name in TABLES if spark.catalog.tableExists(name)]
+    if existing:
+        raise ValueError(f"Refusing to overwrite existing tables: {existing}")
 
 for name in TABLES:
     path = f"{SEED_DIR}/{name}.csv"
@@ -33,7 +40,7 @@ for name in TABLES:
           .csv(path))
     # 'user' is a reserved word in some SQL dialects; the lakehouse handles it,
     # but you may prefer to rename it to 'appuser' here and everywhere downstream.
-    df.write.mode("overwrite").format("delta").saveAsTable(name)
+    df.write.mode(WRITE_MODE).format("delta").saveAsTable(name)
     print(f"  -> table `{name}`  ({df.count():,} rows, {len(df.columns)} cols)")
 
 print("\nAll tables loaded. Build the semantic model on top of these tables.")

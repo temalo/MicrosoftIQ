@@ -14,22 +14,25 @@ conferences a year. Two headline questions drive the whole story:
   what's their background?"* that need **both** sources.
 
 Everything is synthetic and **seeded**, so the same top speaker, top sponsor, and
-licensed-user numbers appear on every machine.
+licensed-user numbers appear on every machine. The optional **Real-Time
+Intelligence (RTI)** package adds synthetic badge scans, booth/device dimensions,
+Delta microbatches or independent Eventhouse streaming, KQL dashboard tiles and a
+reproducible single-booth outage scenario.
 
 ## The architecture
 
 ```
-                        ┌──────────────────────────────────────────┐
-   generate.py ──CSV──► │ Fabric Lakehouse (ConferencesData)        │
-        │               │   └─ Direct Lake Semantic Model (measures)│
-        │               │        └─ Fabric IQ Ontology (vocabulary) │
-        │               │             └─ Fabric Data Agent (numbers) │──┐
-        │               └──────────────────────────────────────────┘  │
-        │                                                              ▼
-        └──markdown──► Foundry IQ Knowledge (Azure AI Search) ──► Foundry Agent
-                                                                   Orchestrator
-                                                                        │
-                                                        Teams / M365 / web client (app/)
+generate.py ──CSV──► Fabric Lakehouse ──► Direct Lake semantic model ──┐
+                         │                                          │
+                         └── explicit bindings ──► Ontology         │
+                                                   (runtime limits) │
+RTI simulator ── Delta OR independent Eventhouse KQL source ─────────┤
+                                                                    ▼
+                                                           Fabric Data Agent
+                                                                    │
+generate.py ──markdown──► Foundry IQ Knowledge ─────────────► Foundry orchestrator
+                                                                    │
+                                                        Teams / M365 / web client
 ```
 
 The orchestrator routes numbers → the **Fabric Data Agent**, descriptions → the
@@ -47,6 +50,8 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for a fuller diagram.
 | `agent/` | Orchestrator + Fabric Data Agent instructions, ontology, semantic model, **setup.md** |
 | `app/` | Zero-dependency Node web client for the published agent |
 | `slides/` | A data-driven pitch deck (`build_slides.py`) |
+| `rti/` | Importable Fabric notebook, reusable simulator, explicit schema, KQL setup/functions/dashboard |
+| `tests/` | Standard-library validation for simulator, schema, assets and failure paths |
 
 ## Quickstart
 
@@ -69,6 +74,32 @@ cd slides && python build_slides.py
 
 Full step-by-step instructions: **[agent/setup.md](agent/setup.md)**.
 
+## New: synthetic badge scans and RTI
+
+```powershell
+python generate.py --data-only
+python -m rti.simulator --run-id sample-01 --start 2026-09-15T12:00:00Z --no-sleep
+python -m unittest discover -s tests -v
+```
+
+Import **[rti/simulate_badge_scans.ipynb](rti/simulate_badge_scans.ipynb)** into
+Fabric and attach your own default lakehouse. Follow **[rti/README.md](rti/README.md)**
+for direct Eventhouse streaming, dimension loading, KPI/pulse/leaderboard/
+interaction-mix/peer/quiet-booth queries and an outage walkthrough.
+Existing output runs are never overwritten by default.
+
+- `IsQualified` = opted-in demo/meeting; **licensed-qualified additionally requires
+  active licensing**. Badge interactions are synthetic, not a conversion funnel.
+- Delta and Eventhouse are independent, **not automatically synchronized**.
+  An Eventstream item alone is not wired. No subsecond latency guarantee.
+- Live KQL requires **adding the KQL database to the Data Agent and republishing**;
+  the existing semantic-model path cannot read it.
+- Ontology relationship declarations require actual instance binding. The
+  [metadata-only probe](agent/metadata-grounding.md) remains unavailable in the
+  observed Standard runtime; this repo does not claim working metadata grounding.
+- Activator is **not provisioned or activated**. Preview alerts, confirm recipients
+  and obtain approval; never automatically share contacts.
+
 ## Reproducible headline answers
 
 After `python generate.py`, `data/output/manifest.json` records the exact answers
@@ -83,6 +114,12 @@ entities, so data and narrative always agree.
 - **Node 18+** (web client; no `npm install` needed)
 - **Azure CLI** (`az`) for the device-code sign-in and RBAC
 - A **Microsoft Fabric** capacity and an **Azure AI Foundry** resource
+- Optional direct streaming dependencies: `rti/requirements-eventhouse.txt`.
+  Delta uses Fabric's supplied Spark runtime; local JSON/tests need no packages.
+
+The current pitch deck covers the original historical data/knowledge story.
+Its RTI, Activator and metadata-grounding claims have not been expanded; use the
+RTI walkthrough for those features rather than assuming the deck demonstrates them.
 
 ## A note on the data
 

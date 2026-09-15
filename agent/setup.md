@@ -3,12 +3,15 @@
 This walks you from an empty workspace to the full **Microsoft IQ** loop:
 
 ```
-CSV data ─► Fabric lakehouse ─► Direct Lake semantic model ─► Fabric IQ ontology
+CSV data ─► Fabric lakehouse ─► Direct Lake semantic model
                                           │
                                           ├─► Fabric Data Agent (numbers)
 knowledge/*.md ─► Foundry IQ knowledge ───┤
                                           └─► Foundry Agent orchestrator ─► web app
 ```
+
+Ontology requires separate entity/instance bindings to the lakehouse. The optional
+Eventhouse RTI path adds a KQL source to the Data Agent, not to Direct Lake.
 
 ## 0. Prerequisites
 
@@ -31,7 +34,9 @@ Produces `data/output/*.csv`, `data/output/manifest.json` and
 1. Create a lakehouse named **`ConferencesData`**.
 2. Upload every CSV from `data/output/` into the lakehouse's `Files/seed/` folder.
 3. Create a notebook attached to the lakehouse, paste `data/load_to_fabric.py`,
-   and run it. You now have one Delta table per CSV.
+   and run it. You now have one Delta table per CSV, including `boothdim` and
+   `scandevice`. The loader refuses existing tables by default; review the data
+   before explicitly changing `WRITE_MODE` in a disposable demo lakehouse.
 
 ## 3. Semantic model (Direct Lake)
 
@@ -40,17 +45,40 @@ and paste the DAX measures. Verify the headline answers match `manifest.json`.
 
 ## 4. Ontology (Fabric IQ)
 
-Follow **[agent/ontology.md](ontology.md)** — create the 13 entity types bound to
-the lakehouse and the relationships. (Optional but completes the story.)
+Follow **[agent/ontology.md](ontology.md)** — create the 13 base entity types and
+the optional three RTI types. Configure real instance bindings using the explicit
+mapping specification; native relationship declarations do not auto-join FKs.
+The isolated metadata-only probe remains a known limitation, not a working demo.
 
 ## 5. Fabric Data Agent
 
 1. Create a Data Agent over the **`ConferencesData` semantic model**.
-2. Add all tables as data sources.
+2. Select the intended tables/measures in that source's metadata. Do not assume
+   newly created tables are automatically selected or available to the agent.
 3. Paste **[agent/fabric-data-agent-instructions.md](fabric-data-agent-instructions.md)**
    as the instructions (the top routing rule is essential).
 4. **Publish**, then note the **workspace ID** and the **data agent (artifact) ID**
    from the URL — you'll need both for the orchestrator and the app.
+
+### Optional RTI extension
+
+Follow **[rti/README.md](../rti/README.md)**. Import its `.ipynb`, attach your default
+lakehouse and upload its Python/schema files. Pick **Delta OR Eventhouse**:
+
+- Delta: select new tables/measures and apply the unambiguous relationship
+  configuration in `semantic-model.md`, then update Data Agent metadata selection.
+- Eventhouse: explicitly load KQL dimensions, deploy tables/mappings/functions,
+  and add the **KQL database as another Data Agent source** with the required
+  tables/functions selected. Update source descriptions and routing instructions.
+  The existing semantic model source alone **will not read KQL**.
+
+Publish the Data Agent again; check the orchestrator tool still references the
+intended published artifact and publish the orchestrator when its configuration
+changes. In a **fresh published-agent conversation**, ask a scoped RunId /
+ConferenceId / UTC-window scan question and compare its cited KQL result with
+direct KQL. Also retest the original historical ranking and knowledge routes.
+Successful notebook ingestion or direct KQL alone does not verify agent routing.
+No publishing, dashboard, Eventstream wiring, or Activator activation is automated.
 
 ## 6. Foundry model deployments
 
